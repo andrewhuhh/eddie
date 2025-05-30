@@ -47,6 +47,8 @@ interface RelationshipDataContextType {
   loading: boolean
   refreshData: () => Promise<void>
   addPerson: (person: any) => Promise<any>
+  updatePerson: (id: string, updates: any) => Promise<any>
+  deletePerson: (id: string) => Promise<void>
   addInteraction: (interaction: any) => Promise<any>
   addJournalEntry: (entry: any) => Promise<any>
 }
@@ -226,6 +228,35 @@ export function RelationshipDataProvider({ children }: { children: ReactNode }) 
     return data
   }
 
+  const updatePerson = async (id: string, updates: any) => {
+    if (!user?.id) throw new Error('User not authenticated')
+    
+    const { data, error } = await supabase
+      .from('people')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) throw error
+    await fetchAllData() // Refresh all data
+    return data
+  }
+
+  const deletePerson = async (id: string) => {
+    if (!user?.id) throw new Error('User not authenticated')
+    
+    const { error } = await supabase
+      .from('people')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (error) throw error
+    await fetchAllData() // Refresh all data
+  }
+
   const addJournalEntry = async (entryData: any) => {
     const { data, error } = await supabase
       .from('journal_entries')
@@ -313,6 +344,8 @@ export function RelationshipDataProvider({ children }: { children: ReactNode }) 
     loading,
     refreshData: fetchAllData,
     addPerson,
+    updatePerson,
+    deletePerson,
     addInteraction,
     addJournalEntry
   }

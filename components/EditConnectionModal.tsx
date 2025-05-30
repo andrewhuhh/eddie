@@ -1,23 +1,34 @@
+'use client'
+
 import React, { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, User, Heart, Phone, Mail, MessageCircle, Twitter, Linkedin, Users, Camera } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
-import { useAuth } from '@/contexts/AuthContext'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
-import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { User, Upload, Trash2, Camera } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 import { CustomSelect } from '@/components/ui/custom-select'
 import { PlatformType } from '@/types/database'
 
-interface AddConnectionModalProps {
+interface EditConnectionModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
+  connection: {
+    id: string
+    name: string
+    relationship: string
+    email?: string
+    phone?: string
+    notes?: string
+    preferred_platform: string
+    closeness: number
+    avatar_url?: string
+  } | null
 }
 
 const relationshipOptions = [
@@ -32,42 +43,60 @@ const relationshipOptions = [
 ]
 
 const platformOptions = [
-  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
-  { value: 'instagram', label: 'Instagram', icon: MessageCircle },
-  { value: 'facebook', label: 'Facebook', icon: MessageCircle },
-  { value: 'twitter', label: 'Twitter', icon: Twitter },
-  { value: 'linkedin', label: 'LinkedIn', icon: Linkedin },
-  { value: 'phone', label: 'Phone', icon: Phone },
-  { value: 'email', label: 'Email', icon: Mail },
-  { value: 'in_person', label: 'In Person', icon: Users },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'twitter', label: 'Twitter' },
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'email', label: 'Email' },
+  { value: 'in_person', label: 'In Person' },
 ]
 
-export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddConnectionModalProps) {
+export default function EditConnectionModal({ isOpen, onClose, onSuccess, connection }: EditConnectionModalProps) {
   const { user } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  
   const [formData, setFormData] = useState({
-    name: '',
-    relationship: '',
-    email: '',
-    phone: '',
-    notes: '',
-    preferred_platform: 'whatsapp',
-    closeness: 3,
-    avatar_url: '',
+    name: connection?.name || '',
+    relationship: connection?.relationship || '',
+    email: connection?.email || '',
+    phone: connection?.phone || '',
+    notes: connection?.notes || '',
+    preferred_platform: connection?.preferred_platform || 'whatsapp',
+    closeness: connection?.closeness || 3,
+    avatar_url: connection?.avatar_url || '',
   })
+
+  // Update form data when connection changes
+  React.useEffect(() => {
+    if (connection) {
+      setFormData({
+        name: connection.name || '',
+        relationship: connection.relationship || '',
+        email: connection.email || '',
+        phone: connection.phone || '',
+        notes: connection.notes || '',
+        preferred_platform: connection.preferred_platform || 'whatsapp',
+        closeness: connection.closeness || 3,
+        avatar_url: connection.avatar_url || '',
+      })
+    }
+  }, [connection])
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !user) return
+    if (!file || !user || !connection) return
 
     setUploadingAvatar(true)
     try {
       // Create a unique filename
       const fileExt = file.name.split('.').pop()
-      const tempId = Date.now().toString()
-      const fileName = `${user.id}/${tempId}/avatar.${fileExt}`
+      const fileName = `${user.id}/${connection.id}/avatar.${fileExt}`
 
       // Upload to Supabase Storage
       const { data, error } = await supabase.storage
@@ -92,15 +121,14 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user || !formData.name.trim()) return
+    if (!user || !connection || !formData.name.trim()) return
 
     setLoading(true)
     try {
       // Determine if we're using a custom platform
       const isCustomPlatform = !platformOptions.some(p => p.value === formData.preferred_platform)
       
-      const insertData = {
-        user_id: user.id,
+      const updateData = {
         name: formData.name.trim(),
         relationship: formData.relationship || null,
         email: formData.email.trim() || null,
@@ -110,36 +138,59 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
         custom_platform: isCustomPlatform ? formData.preferred_platform : null,
         closeness: formData.closeness,
         avatar_url: formData.avatar_url || null,
+        updated_at: new Date().toISOString(),
       }
 
       const { error } = await supabase
         .from('people')
-        .insert(insertData)
+        .update(updateData)
+        .eq('id', connection.id)
+        .eq('user_id', user.id)
 
       if (error) throw error
 
-      // Reset form
-      setFormData({
-        name: '',
-        relationship: '',
-        email: '',
-        phone: '',
-        notes: '',
-        preferred_platform: 'whatsapp',
-        closeness: 3,
-        avatar_url: '',
-      })
+      onSuccess()
+      onClose()
+    } catch (error) {
+      console.error('Error updating connection:', error)
+      alert('Failed to update connection. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!user || !connection) return
+
+    setDeleteLoading(true)
+    try {
+      // Delete the person (this will cascade to interactions and reminders due to foreign key constraints)
+      const { error } = await supabase
+        .from('people')
+        .delete()
+        .eq('id', connection.id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      // Delete avatar from storage if it exists
+      if (connection.avatar_url) {
+        try {
+          const fileName = `${user.id}/${connection.id}/avatar.jpg`
+          await supabase.storage.from('avatars').remove([fileName])
+        } catch (storageError) {
+          console.warn('Failed to delete avatar from storage:', storageError)
+        }
+      }
 
       onSuccess()
       onClose()
-      
-      // Force page refresh to ensure all components show the new connection
-      window.location.reload()
     } catch (error) {
-      console.error('Error adding connection:', error)
-      alert('Failed to add connection. Please try again.')
+      console.error('Error deleting connection:', error)
+      alert('Failed to delete connection. Please try again.')
     } finally {
-      setLoading(false)
+      setDeleteLoading(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -148,11 +199,13 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
     return labels[value - 1] || 'Friend'
   }
 
+  if (!connection) return null
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-serif">Add New Connection</DialogTitle>
+          <DialogTitle className="text-xl font-serif">Edit Connection</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -178,7 +231,7 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
                 ) : (
                   <Camera className="w-4 h-4" />
                 )}
-                <span>{uploadingAvatar ? 'Uploading...' : 'Add Photo'}</span>
+                <span>{uploadingAvatar ? 'Uploading...' : 'Change Photo'}</span>
               </Button>
               <input
                 ref={fileInputRef}
@@ -218,7 +271,7 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
             <CustomSelect
               label="Relationship"
               value={formData.relationship}
-              onValueChange={(value) => setFormData({ ...formData, relationship: value })}
+              onValueChange={(value: string) => setFormData({ ...formData, relationship: value })}
               options={relationshipOptions}
               placeholder="Select relationship type"
               customPlaceholder="Enter custom relationship"
@@ -255,7 +308,7 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
             <CustomSelect
               label="Preferred Platform"
               value={formData.preferred_platform}
-              onValueChange={(value) => setFormData({ ...formData, preferred_platform: value })}
+              onValueChange={(value: string) => setFormData({ ...formData, preferred_platform: value })}
               options={platformOptions}
               placeholder="Select platform"
               customPlaceholder="Enter custom platform"
@@ -306,20 +359,63 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={loading || !formData.name.trim()}
-              className="flex-1"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <User className="w-4 h-4 mr-2" />
-                  Add Connection
-                </>
-              )}
-            </Button>
+            
+            {!showDeleteConfirm ? (
+              <>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete</span>
+                </Button>
+                
+                <Button
+                  type="submit"
+                  disabled={loading || !formData.name.trim()}
+                  className="flex-1"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <User className="w-4 h-4 mr-2" />
+                      Update Connection
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1"
+                >
+                  Cancel Delete
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="flex-1"
+                >
+                  {deleteLoading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Confirm Delete
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </form>
       </DialogContent>
