@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent } from '@/components/ui/card'
+// PlatformType will not be directly used for formData state anymore, but keep for platforms array for now.
 import { PlatformType } from '@/types/database'
 
 interface AddConnectionModalProps {
@@ -39,37 +40,57 @@ const platforms = [
   { id: 'phone' as PlatformType, label: 'Phone', icon: Phone },
   { id: 'email' as PlatformType, label: 'Email', icon: Mail },
   { id: 'in_person' as PlatformType, label: 'In Person', icon: Users },
+  { id: 'other_platform_sentinel', label: 'Other', icon: Users }, // Using Users icon as a generic one
 ]
 
 export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddConnectionModalProps) {
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [customRelationship, setCustomRelationship] = useState('')
+  const [customPreferredPlatform, setCustomPreferredPlatform] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     relationship: '',
     email: '',
     phone: '',
     notes: '',
-    preferred_platform: 'whatsapp' as PlatformType,
+    preferred_platform: 'whatsapp', // Now a string, not PlatformType
     closeness: 3,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !formData.name.trim()) return
+    if (formData.relationship === 'Other' && !customRelationship.trim()) {
+      // Optionally, you can show an error message to the user here
+      // For now, just prevent submission
+      return
+    }
+    if (formData.preferred_platform === 'other_platform_sentinel' && !customPreferredPlatform.trim()) {
+      // Optionally, show error for custom platform
+      return
+    }
 
     setLoading(true)
     try {
+      const relationshipValue = formData.relationship === 'Other' && customRelationship.trim()
+        ? customRelationship.trim()
+        : formData.relationship || null;
+
+      const preferredPlatformValue = formData.preferred_platform === 'other_platform_sentinel' && customPreferredPlatform.trim()
+        ? customPreferredPlatform.trim()
+        : formData.preferred_platform;
+
       const { error } = await supabase
         .from('people')
         .insert({
           user_id: user.id,
           name: formData.name.trim(),
-          relationship: formData.relationship || null,
+          relationship: relationshipValue,
           email: formData.email.trim() || null,
           phone: formData.phone.trim() || null,
           notes: formData.notes.trim() || null,
-          preferred_platform: formData.preferred_platform,
+          preferred_platform: preferredPlatformValue,
           closeness: formData.closeness,
         })
 
@@ -82,9 +103,11 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
         email: '',
         phone: '',
         notes: '',
-        preferred_platform: 'whatsapp' as PlatformType,
+        preferred_platform: 'whatsapp', // Reset to string
         closeness: 3,
       })
+      setCustomRelationship('') // Reset custom relationship
+      setCustomPreferredPlatform('') // Reset custom platform
 
       onSuccess()
       onClose()
@@ -141,6 +164,20 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
                 </SelectContent>
               </Select>
             </div>
+
+            {formData.relationship === 'Other' && (
+              <div className="space-y-2">
+                <Label htmlFor="customRelationship">Custom Relationship *</Label>
+                <Input
+                  id="customRelationship"
+                  type="text"
+                  value={customRelationship}
+                  onChange={(e) => setCustomRelationship(e.target.value)}
+                  placeholder="Specify relationship type"
+                  required={formData.relationship === 'Other'}
+                />
+              </div>
+            )}
           </div>
 
           {/* Contact Information */}
@@ -173,10 +210,10 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
               <Label htmlFor="platform">Preferred Platform</Label>
               <Select
                 value={formData.preferred_platform}
-                onValueChange={(value: PlatformType) => setFormData({ ...formData, preferred_platform: value })}
+                onValueChange={(value: string) => setFormData({ ...formData, preferred_platform: value })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select preferred platform"/>
                 </SelectTrigger>
                 <SelectContent>
                   {platforms.map((platform) => (
@@ -190,6 +227,19 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
                 </SelectContent>
               </Select>
             </div>
+            {formData.preferred_platform === 'other_platform_sentinel' && (
+              <div className="space-y-2">
+                <Label htmlFor="customPreferredPlatform">Custom Preferred Platform *</Label>
+                <Input
+                  id="customPreferredPlatform"
+                  type="text"
+                  value={customPreferredPlatform}
+                  onChange={(e) => setCustomPreferredPlatform(e.target.value)}
+                  placeholder="Specify preferred platform"
+                  required={formData.preferred_platform === 'other_platform_sentinel'}
+                />
+              </div>
+            )}
           </div>
 
           {/* Closeness */}
@@ -237,7 +287,12 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
             </Button>
             <Button
               type="submit"
-              disabled={loading || !formData.name.trim()}
+              disabled={
+                loading ||
+                !formData.name.trim() ||
+                (formData.relationship === 'Other' && !customRelationship.trim()) ||
+                (formData.preferred_platform === 'other_platform_sentinel' && !customPreferredPlatform.trim())
+              }
               className="flex-1"
             >
               {loading ? (
