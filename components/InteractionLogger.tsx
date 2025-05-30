@@ -37,9 +37,11 @@ const platforms = [
   { value: 'phone', label: 'Phone' },
   { value: 'email', label: 'Email' },
   { value: 'in_person', label: 'In Person' },
+  { value: 'other_platform_sentinel', label: 'Other' },
 ]
 
 export default function InteractionLogger({ isOpen, onClose, onSuccess }: InteractionLoggerProps) {
+  const [customPlatform, setCustomPlatform] = useState('')
   const [formData, setFormData] = useState({
     person_id: '',
     type: 'text',
@@ -55,19 +57,28 @@ export default function InteractionLogger({ isOpen, onClose, onSuccess }: Intera
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user || !formData.person_id || !formData.type) return
+    if (formData.platform === 'other_platform_sentinel' && !customPlatform.trim()) {
+      // Optionally, show an error message to the user
+      return
+    }
 
     setLoading(true)
     try {
+      const platformValue = formData.platform === 'other_platform_sentinel' && customPlatform.trim()
+        ? customPlatform.trim()
+        : formData.platform;
+
       const interactionData = {
         person_id: formData.person_id,
         type: formData.type,
-        platform: formData.platform,
+        platform: platformValue,
         description: formData.description.trim() || undefined,
         occurred_at: formData.occurred_at,
         duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : undefined,
       }
 
       await addInteraction(interactionData)
+      setCustomPlatform('') // Reset custom platform state
       onSuccess()
       onClose()
     } catch (error) {
@@ -166,6 +177,21 @@ export default function InteractionLogger({ isOpen, onClose, onSuccess }: Intera
               </Select>
             </div>
 
+            {formData.platform === 'other_platform_sentinel' && (
+              <div className="space-y-2">
+                <Label htmlFor="customPlatform">Custom Platform *</Label>
+                <Input
+                  id="customPlatform"
+                  type="text"
+                  value={customPlatform}
+                  onChange={(e) => setCustomPlatform(e.target.value)}
+                  placeholder="Specify platform"
+                  required={formData.platform === 'other_platform_sentinel'}
+                  className="text-base"
+                />
+              </div>
+            )}
+
             {/* Date and Time */}
             <div className="space-y-2">
               <Label htmlFor="occurred_at">When did this happen?</Label>
@@ -226,7 +252,12 @@ export default function InteractionLogger({ isOpen, onClose, onSuccess }: Intera
               </Button>
               <Button
                 type="submit"
-                disabled={loading || !formData.person_id || !formData.type}
+                disabled={
+                  loading ||
+                  !formData.person_id ||
+                  !formData.type ||
+                  (formData.platform === 'other_platform_sentinel' && !customPlatform.trim())
+                }
                 className="flex-1 order-1 sm:order-2"
               >
                 {loading ? (
