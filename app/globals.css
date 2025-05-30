@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-neutral-800 font-sans;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+  
+  /* Typography hierarchy using Instrument fonts */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+  
+  .brand-title {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  /* Button variants following calm technology principles */
+  .btn-primary {
+    @apply bg-coral-500 hover:bg-coral-600 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-coral-300 focus:ring-offset-2 font-sans;
+  }
+  
+  .btn-secondary {
+    @apply bg-sage-400 hover:bg-sage-500 text-white px-6 py-3 rounded-2xl font-medium transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-sage-300 focus:ring-offset-2 font-sans;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-neutral-100 text-neutral-700 px-6 py-3 rounded-2xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:ring-offset-2 font-sans;
+  }
+  
+  /* Card styles with soft shadows */
+  .card {
+    @apply bg-white rounded-3xl shadow-sm border border-neutral-100 p-6 transition-all duration-200 hover:shadow-md;
+  }
+  
+  /* Input styles */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-neutral-200 focus:border-coral-400 focus:ring-1 focus:ring-coral-300 focus:outline-none transition-colors duration-200 bg-white placeholder-neutral-400 font-sans;
+  }
+  
+  /* Relationship health indicators */
+  .health-healthy {
+    @apply text-healthy bg-sage-50 border-sage-200;
+  }
+  
+  .health-attention {
+    @apply text-attention bg-coral-50 border-coral-200;
+  }
+  
+  .health-inactive {
+    @apply text-inactive bg-neutral-50 border-neutral-200;
+  }
+}
+
+@layer utilities {
+  /* Custom animations for micro-interactions */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+  
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  /* Gentle hover effects */
+  .hover-lift {
+    @apply transition-transform duration-200 hover:-translate-y-1;
+  }
+} 
