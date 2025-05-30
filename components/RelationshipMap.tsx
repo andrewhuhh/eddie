@@ -28,13 +28,53 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
     const height = Math.min(width * 0.8, 400)
     const centerX = width / 2
     const centerY = height / 2
-
+    
     svg.attr('width', width).attr('height', height)
 
-    // Create zoom behavior with boundaries
+    // Create radial gradient for background
+    const defs = svg.append('defs')
+    const gradient = defs.append('radialGradient')
+      .attr('id', 'centerGradient')
+      .attr('cx', centerX)
+      .attr('cy', centerY)
+      .attr('r', Math.min(width, height) * 0.6)
+      .attr('gradientUnits', 'userSpaceOnUse')
+
+    gradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#fef7f0')
+      .attr('stop-opacity', 0.8)
+
+    gradient.append('stop')
+      .attr('offset', '50%')
+      .attr('stop-color', '#fef2e7')
+      .attr('stop-opacity', 0.4)
+
+    gradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#f9fafb')
+      .attr('stop-opacity', 0.1)
+
+    // Create main group for all elements
+    const g = svg.append('g')
+
+    // Add gradient background to the main group (so it moves with pan/zoom)
+    // Center it around the "You" node position
+    g.append('rect')
+      .attr('x', centerX - width * 1.5)
+      .attr('y', centerY - height * 1.5)
+      .attr('width', width * 3)
+      .attr('height', height * 3)
+      .attr('fill', 'url(#centerGradient)')
+
+    // Create zoom behavior with boundaries - properly centered around the "You" node
     const zoom = d3.zoom()
-      .scaleExtent([0.5, 3]) // Limit zoom scale
-      .translateExtent([[-width * 0.5, -height * 0.5], [width * 1.5, height * 1.5]]) // Set pan boundaries
+      .scaleExtent([0.4, 3])
+      // Center the translate extent around the "You" node position
+      .translateExtent([
+        [centerX - width * 0.75, centerY - height * 0.75], 
+        [centerX + width * 0.75, centerY + height * 0.75]
+      ])
       .on('zoom', (event) => {
         g.attr('transform', event.transform)
       })
@@ -42,8 +82,11 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
     // Apply zoom to SVG
     svg.call(zoom as any)
 
-    // Create main group for all elements
-    const g = svg.append('g')
+    // Reset to center the "You" node in the viewport
+    const initialTransform = d3.zoomIdentity
+      .translate(0, 0) // Start with no translation since our content is already centered
+      .scale(1)
+    svg.call(zoom.transform as any, initialTransform)
 
     // Create groups for better organization
     const connectionGroup = g.append('g').attr('class', 'connections')
@@ -228,7 +271,7 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
       <div className="relative overflow-hidden">
         <svg 
           ref={svgRef} 
-          className="w-full h-auto border border-neutral-100 rounded-xl sm:rounded-2xl bg-neutral-50"
+          className="w-full h-auto border border-neutral-100 rounded-xl sm:rounded-2xl bg-neutral-50 cursor-pointer"
           style={{ minHeight: '250px' }}
         ></svg>
       </div>
