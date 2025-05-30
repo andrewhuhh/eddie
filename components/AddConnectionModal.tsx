@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent } from '@/components/ui/card'
+import { CustomSelect } from '@/components/ui/custom-select'
 import { PlatformType } from '@/types/database'
 
 interface AddConnectionModalProps {
@@ -19,26 +19,26 @@ interface AddConnectionModalProps {
   onSuccess: () => void
 }
 
-const relationshipTypes = [
-  'Family',
-  'Best Friend',
-  'Friend',
-  'Colleague',
-  'Acquaintance',
-  'Romantic Partner',
-  'Mentor',
-  'Other'
+const relationshipOptions = [
+  { value: 'Family', label: 'Family' },
+  { value: 'Best Friend', label: 'Best Friend' },
+  { value: 'Friend', label: 'Friend' },
+  { value: 'Colleague', label: 'Colleague' },
+  { value: 'Acquaintance', label: 'Acquaintance' },
+  { value: 'Romantic Partner', label: 'Romantic Partner' },
+  { value: 'Mentor', label: 'Mentor' },
+  { value: 'Other', label: 'Other' }
 ]
 
-const platforms = [
-  { id: 'whatsapp' as PlatformType, label: 'WhatsApp', icon: MessageCircle },
-  { id: 'instagram' as PlatformType, label: 'Instagram', icon: MessageCircle },
-  { id: 'facebook' as PlatformType, label: 'Facebook', icon: MessageCircle },
-  { id: 'twitter' as PlatformType, label: 'Twitter', icon: Twitter },
-  { id: 'linkedin' as PlatformType, label: 'LinkedIn', icon: Linkedin },
-  { id: 'phone' as PlatformType, label: 'Phone', icon: Phone },
-  { id: 'email' as PlatformType, label: 'Email', icon: Mail },
-  { id: 'in_person' as PlatformType, label: 'In Person', icon: Users },
+const platformOptions = [
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { value: 'instagram', label: 'Instagram', icon: MessageCircle },
+  { value: 'facebook', label: 'Facebook', icon: MessageCircle },
+  { value: 'twitter', label: 'Twitter', icon: Twitter },
+  { value: 'linkedin', label: 'LinkedIn', icon: Linkedin },
+  { value: 'phone', label: 'Phone', icon: Phone },
+  { value: 'email', label: 'Email', icon: Mail },
+  { value: 'in_person', label: 'In Person', icon: Users },
 ]
 
 export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddConnectionModalProps) {
@@ -50,7 +50,7 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
     email: '',
     phone: '',
     notes: '',
-    preferred_platform: 'whatsapp' as PlatformType,
+    preferred_platform: 'whatsapp',
     closeness: 3,
   })
 
@@ -60,18 +60,24 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
 
     setLoading(true)
     try {
+      // Determine if we're using a custom platform
+      const isCustomPlatform = !platformOptions.some(p => p.value === formData.preferred_platform)
+      
+      const insertData = {
+        user_id: user.id,
+        name: formData.name.trim(),
+        relationship: formData.relationship || null,
+        email: formData.email.trim() || null,
+        phone: formData.phone.trim() || null,
+        notes: formData.notes.trim() || null,
+        preferred_platform: isCustomPlatform ? 'custom' as PlatformType : formData.preferred_platform as PlatformType,
+        custom_platform: isCustomPlatform ? formData.preferred_platform : null,
+        closeness: formData.closeness,
+      }
+
       const { error } = await supabase
         .from('people')
-        .insert({
-          user_id: user.id,
-          name: formData.name.trim(),
-          relationship: formData.relationship || null,
-          email: formData.email.trim() || null,
-          phone: formData.phone.trim() || null,
-          notes: formData.notes.trim() || null,
-          preferred_platform: formData.preferred_platform,
-          closeness: formData.closeness,
-        })
+        .insert(insertData)
 
       if (error) throw error
 
@@ -82,12 +88,15 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
         email: '',
         phone: '',
         notes: '',
-        preferred_platform: 'whatsapp' as PlatformType,
+        preferred_platform: 'whatsapp',
         closeness: 3,
       })
 
       onSuccess()
       onClose()
+      
+      // Force page refresh to ensure all components show the new connection
+      window.location.reload()
     } catch (error) {
       console.error('Error adding connection:', error)
       alert('Failed to add connection. Please try again.')
@@ -123,24 +132,15 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="relationship">Relationship</Label>
-              <Select
-                value={formData.relationship}
-                onValueChange={(value) => setFormData({ ...formData, relationship: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select relationship type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {relationshipTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <CustomSelect
+              label="Relationship"
+              value={formData.relationship}
+              onValueChange={(value) => setFormData({ ...formData, relationship: value })}
+              options={relationshipOptions}
+              placeholder="Select relationship type"
+              customPlaceholder="Enter custom relationship"
+              allowCustom={true}
+            />
           </div>
 
           {/* Contact Information */}
@@ -169,27 +169,15 @@ export default function AddConnectionModal({ isOpen, onClose, onSuccess }: AddCo
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="platform">Preferred Platform</Label>
-              <Select
-                value={formData.preferred_platform}
-                onValueChange={(value: PlatformType) => setFormData({ ...formData, preferred_platform: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {platforms.map((platform) => (
-                    <SelectItem key={platform.id} value={platform.id}>
-                      <div className="flex items-center space-x-2">
-                        <platform.icon className="w-4 h-4" />
-                        <span>{platform.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <CustomSelect
+              label="Preferred Platform"
+              value={formData.preferred_platform}
+              onValueChange={(value) => setFormData({ ...formData, preferred_platform: value })}
+              options={platformOptions}
+              placeholder="Select platform"
+              customPlaceholder="Enter custom platform"
+              allowCustom={true}
+            />
           </div>
 
           {/* Closeness */}

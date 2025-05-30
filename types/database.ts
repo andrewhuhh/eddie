@@ -12,6 +12,7 @@ export type Database = {
       interactions: {
         Row: {
           created_at: string | null
+          custom_platform: string | null
           description: string | null
           duration_minutes: number | null
           id: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          custom_platform?: string | null
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -38,6 +40,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          custom_platform?: string | null
           description?: string | null
           duration_minutes?: number | null
           id?: string
@@ -241,6 +244,7 @@ export type Database = {
           birthday: string | null
           closeness: number | null
           created_at: string | null
+          custom_platform: string | null
           email: string | null
           health: Database["public"]["Enums"]["relationship_health"] | null
           id: string
@@ -259,6 +263,7 @@ export type Database = {
           birthday?: string | null
           closeness?: number | null
           created_at?: string | null
+          custom_platform?: string | null
           email?: string | null
           health?: Database["public"]["Enums"]["relationship_health"] | null
           id?: string
@@ -277,7 +282,8 @@ export type Database = {
           birthday?: string | null
           closeness?: number | null
           created_at?: string | null
-          email?: Database["public"]["Enums"]["relationship_health"] | null
+          custom_platform?: string | null
+          email?: string | null
           health?: Database["public"]["Enums"]["relationship_health"] | null
           id?: string
           name?: string
@@ -369,6 +375,7 @@ export type Database = {
         | "phone"
         | "email"
         | "in_person"
+        | "custom"
       relationship_health: "healthy" | "attention" | "inactive"
       reminder_frequency:
         | "daily"
@@ -509,6 +516,7 @@ export const Constants = {
         "phone",
         "email",
         "in_person",
+        "custom",
       ],
       relationship_health: ["healthy", "attention", "inactive"],
       reminder_frequency: [

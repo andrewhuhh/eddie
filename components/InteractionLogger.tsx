@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { X, MessageCircle, Phone, Video, Mail, User, Calendar, Clock } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CustomSelect } from '@/components/ui/custom-select'
+import { PlatformType } from '@/types/database'
 
 interface InteractionLoggerProps {
   isOpen: boolean
@@ -28,15 +30,15 @@ const interactionTypes = [
   { value: 'social_media', label: 'Social Media', icon: MessageCircle },
 ]
 
-const platforms = [
-  { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'instagram', label: 'Instagram' },
-  { value: 'facebook', label: 'Facebook' },
-  { value: 'twitter', label: 'Twitter' },
-  { value: 'linkedin', label: 'LinkedIn' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'email', label: 'Email' },
-  { value: 'in_person', label: 'In Person' },
+const platformOptions = [
+  { value: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
+  { value: 'instagram', label: 'Instagram', icon: MessageCircle },
+  { value: 'facebook', label: 'Facebook', icon: MessageCircle },
+  { value: 'twitter', label: 'Twitter', icon: MessageCircle },
+  { value: 'linkedin', label: 'LinkedIn', icon: MessageCircle },
+  { value: 'phone', label: 'Phone', icon: Phone },
+  { value: 'email', label: 'Email', icon: Mail },
+  { value: 'in_person', label: 'In Person', icon: User },
 ]
 
 export default function InteractionLogger({ isOpen, onClose, onSuccess }: InteractionLoggerProps) {
@@ -58,10 +60,14 @@ export default function InteractionLogger({ isOpen, onClose, onSuccess }: Intera
 
     setLoading(true)
     try {
+      // Determine if we're using a custom platform
+      const isCustomPlatform = !platformOptions.some(p => p.value === formData.platform)
+      
       const interactionData = {
         person_id: formData.person_id,
         type: formData.type,
-        platform: formData.platform,
+        platform: isCustomPlatform ? 'custom' as PlatformType : formData.platform as PlatformType,
+        custom_platform: isCustomPlatform ? formData.platform : null,
         description: formData.description.trim() || undefined,
         occurred_at: formData.occurred_at,
         duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : undefined,
@@ -147,24 +153,15 @@ export default function InteractionLogger({ isOpen, onClose, onSuccess }: Intera
             </div>
 
             {/* Platform */}
-            <div className="space-y-2">
-              <Label htmlFor="platform">Platform</Label>
-              <Select
-                value={formData.platform}
-                onValueChange={(value) => setFormData({ ...formData, platform: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {platforms.map((platform) => (
-                    <SelectItem key={platform.value} value={platform.value}>
-                      {platform.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <CustomSelect
+              label="Platform"
+              value={formData.platform}
+              onValueChange={(value) => setFormData({ ...formData, platform: value })}
+              options={platformOptions}
+              placeholder="Select platform"
+              customPlaceholder="Enter custom platform"
+              allowCustom={true}
+            />
 
             {/* Date and Time */}
             <div className="space-y-2">

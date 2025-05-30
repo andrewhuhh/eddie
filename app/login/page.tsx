@@ -5,18 +5,48 @@ import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-import { Heart, Users, MessageCircle, Calendar } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Heart, Users, MessageCircle, Calendar, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [authError, setAuthError] = useState<string | null>(null)
 
   useEffect(() => {
     if (user && !loading) {
       router.push('/')
     }
   }, [user, loading, router])
+
+  // Listen for auth errors
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Login page - Auth event:', event)
+        console.log('Login page - Session:', session)
+        
+        if (event === 'SIGNED_IN' && session) {
+          console.log('Login successful, redirecting...')
+          setAuthError(null)
+        }
+        
+        // Check for auth errors in URL params
+        if (typeof window !== 'undefined') {
+          const urlParams = new URLSearchParams(window.location.search)
+          const error = urlParams.get('error')
+          const errorDescription = urlParams.get('error_description')
+          
+          if (error) {
+            console.error('Auth error from URL:', error, errorDescription)
+            setAuthError(errorDescription || error)
+          }
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   if (loading) {
     return (
@@ -41,6 +71,19 @@ export default function LoginPage() {
           <h1 className="text-3xl font-serif text-neutral-800 mb-2">i miss my friends</h1>
           <p className="text-neutral-600">Nurture meaningful relationships with the people you care about</p>
         </div>
+
+        {/* Error Display */}
+        {authError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-red-800">Authentication Error</h3>
+                <p className="text-sm text-red-600 mt-1">{authError}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Features Preview */}
         <div className="grid grid-cols-2 gap-4 mb-8">
@@ -106,6 +149,16 @@ export default function LoginPage() {
             redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/` : undefined}
             onlyThirdPartyProviders
             showLinks={false}
+            queryParams={{
+              prompt: 'select_account'
+            }}
+            localization={{
+              variables: {
+                sign_in: {
+                  social_provider_text: 'Continue with {{provider}}'
+                }
+              }
+            }}
           />
           
           <div className="mt-6 text-center">

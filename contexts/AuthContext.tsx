@@ -59,6 +59,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.email)
+        console.log('Full session data:', session)
+        console.log('User metadata:', session?.user?.user_metadata)
+        console.log('App metadata:', session?.user?.app_metadata)
         
         if (mounted) {
           setUser(session?.user ?? null)
@@ -67,10 +70,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Handle successful sign in
         if (event === 'SIGNED_IN' && session) {
+          console.log('User successfully signed in:', session.user.email)
           // Clear any URL hash after successful auth
           if (typeof window !== 'undefined' && window.location.hash) {
             window.history.replaceState(null, '', window.location.pathname)
           }
+        }
+
+        // Handle sign in errors
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out')
+        }
+
+        // Log any auth errors
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed for user:', session?.user?.email)
         }
       }
     )

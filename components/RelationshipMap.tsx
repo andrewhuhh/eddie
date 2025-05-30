@@ -318,7 +318,7 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
             <div>
               <span className="text-neutral-500">Preferred platform:</span>
               <p className="font-medium text-neutral-800 capitalize">
-                {selectedConnection.platform}
+                {selectedConnection.preferred_platform}
               </p>
             </div>
           </div>
