@@ -1,71 +1,98 @@
 # i miss my friends
 
-A personal relationship management tool that helps users maintain meaningful connections with friends and family through visualization, tracking, and gentle reminders.
+A personal relationship management tool that helps maintain meaningful connections with friends and family.
 
-## 🌟 Features
+## Features
 
-### MVP Scope
-- **Relationship Visualization**: Radial mind map with color-coded relationship health indicators
-- **WhatsApp Integration**: Track and log conversations (mock integration for demo)
-- **Reflection Tools**: Structured journaling for meaningful interactions
-- **Smart Reminders**: Gentle nudges to reach out to connections
+- **🗺️ Relationship Map**: Visual network of your connections with health status tracking
+- **📱 Multi-Platform Tracking**: WhatsApp, Instagram, Facebook, Phone, Email, and more
+- **📝 Personal Journal**: Private notes and reflections about your relationships
+- **⏰ Smart Reminders**: Automated prompts to stay in touch
+- **📊 Interaction Timeline**: Track all your communications and meetings
+- **🔒 Secure & Private**: Google Sign-In with Row Level Security
 
-## 🎨 Design Philosophy
+## Tech Stack
 
-- **Warm Minimalism**: Soft, rounded shapes with intentional spacing
-- **Muted Pastel Palette**: Coral and sage accents for a calming experience
-- **Calm Technology**: Reducing digital anxiety through thoughtful design
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth + Real-time)
+- **Authentication**: Google OAuth via Supabase Auth
+- **UI**: Framer Motion, Lucide Icons
+- **Fonts**: Inter (sans-serif), Crimson Text (serif)
 
-## 🚀 Getting Started
+## Database Schema
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+The app uses a comprehensive PostgreSQL schema with:
 
-### Installation
+- **people**: Your connections with relationship details
+- **interactions**: All communications and meetings
+- **journal_entries**: Personal notes with tags and mood tracking
+- **reminders**: Smart notification system
+- **Row Level Security**: Each user only sees their own data
 
-1. Install dependencies:
-```bash
-npm install
-```
+## Getting Started
 
-2. Run the development server:
-```bash
-npm run dev
-```
+1. **Clone and install dependencies**:
+   ```bash
+   git clone <repo-url>
+   cd eddie
+   npm install
+   ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
+2. **Set up environment variables**:
+   Create a `.env.local` file with your Supabase credentials:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your-project-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
 
-## 🏗️ Tech Stack
+3. **Configure Google OAuth**:
+   - Go to your Supabase project dashboard
+   - Navigate to Authentication > Providers
+   - Enable Google provider
+   - Add your Google OAuth credentials
 
-- **Framework**: Next.js 14 with TypeScript
-- **Styling**: Tailwind CSS with custom design system
-- **Animations**: Framer Motion
-- **Visualization**: D3.js for relationship mapping
-- **Icons**: Lucide React
-- **Date Handling**: date-fns
+4. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-## 📱 Future Integrations
+5. **Open [http://localhost:3000](http://localhost:3000)** and sign in with Google
 
-- Instagram, Facebook, and WhatsApp APIs
-- Browser extension for desktop use
-- Mobile widget for quick access
-- Encrypted backup and sync
+## Authentication & Security
 
-## 🔒 Privacy
+- **Google Sign-In**: Seamless authentication with your Google account
+- **Row Level Security**: Your data is completely private and isolated
+- **Automatic User Association**: All data is automatically linked to your account
+- **Secure by Default**: No data leakage between users
 
-i miss my friends is designed with privacy at its core:
-- Local data storage by default
-- API integrations collect interaction metadata only (not message content)
-- Optional encrypted backup with user consent
+## Usage
 
-## 📊 Success Metrics
+1. **Sign in** with your Google account
+2. **Add connections** using the "Add Connection" button
+3. **Track interactions** through the timeline
+4. **Write journal entries** to reflect on relationships
+5. **Set reminders** to stay in touch regularly
+6. **View your relationship map** to see connection health
 
-- Increased interaction frequency with peripheral connections
-- Reduced "time since last contact" averages
-- User-reported improvement in relationship satisfaction
-- Completion rate of reflection prompts
+## Development
+
+The app is built with modern React patterns:
+
+- **TypeScript**: Full type safety with generated Supabase types
+- **Context API**: Authentication state management
+- **Protected Routes**: Automatic redirect for unauthenticated users
+- **Real-time Updates**: Live data synchronization via Supabase
+- **Responsive Design**: Works on desktop and mobile
+
+## Privacy
+
+Your relationship data is:
+- ✅ Encrypted in transit and at rest
+- ✅ Isolated per user with RLS
+- ✅ Never shared or sold
+- ✅ Stored securely on Supabase infrastructure
+- ✅ Accessible only to you
 
 ---
 
-Built with ❤️ for maintaining meaningful relationships in the digital age. 
+*Built with ❤️ for meaningful connections* 

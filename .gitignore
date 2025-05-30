@@ -89,6 +89,7 @@ storybook-static
 *.swp
 *.swo
 *~
+.cursor/
 
 # OS generated files
 .DS_Store
