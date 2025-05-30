@@ -29,11 +29,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
+    let mounted = true
+
+    // Get initial session and handle OAuth redirect
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      setLoading(false)
+      try {
+        // This will handle the OAuth redirect and extract tokens from URL hash
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error('Error getting session:', error)
+        }
+        
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error)
+        if (mounted) {
+          setLoading(false)
+        }
+      }
     }
 
     getInitialSession()
@@ -41,12 +58,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
+        console.log('Auth state change:', event, session?.user?.email)
+        
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+
+        // Handle successful sign in
+        if (event === 'SIGNED_IN' && session) {
+          // Clear any URL hash after successful auth
+          if (typeof window !== 'undefined' && window.location.hash) {
+            window.history.replaceState(null, '', window.location.pathname)
+          }
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {

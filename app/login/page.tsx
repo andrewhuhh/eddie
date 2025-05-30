@@ -103,7 +103,7 @@ export default function LoginPage() {
               },
             }}
             providers={['google']}
-            redirectTo={`${window.location.origin}/`}
+            redirectTo={typeof window !== 'undefined' ? `${window.location.origin}/` : undefined}
             onlyThirdPartyProviders
             showLinks={false}
           />
