@@ -147,7 +147,7 @@ export default function InteractionTimeline({ onAddConnection, onLogInteraction 
           )}
           
           {/* Filter buttons */}
-          <div className="flex space-x-1 bg-neutral-100 rounded-xl p-1 order-1 sm:order-2 overflow-x-auto">
+          <div className="flex space-x-1 bg-neutral-100 rounded-lg p-1 order-1 sm:order-2 overflow-x-auto">
             {[
               { id: 'all', label: 'All' },
               { id: 'messages', label: 'Messages' },

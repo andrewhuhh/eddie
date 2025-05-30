@@ -15,7 +15,6 @@ import NotificationsDropdown from '@/components/NotificationsDropdown'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { RelationshipDataProvider } from '@/contexts/RelationshipDataContext'
-import NotificationManager from '@/components/NotificationManager'
 
 export default function HomePage() {
   const [activeView, setActiveView] = useState<'map' | 'timeline' | 'journal'>('map')
@@ -233,7 +232,6 @@ export default function HomePage() {
               {/* Sidebar - Desktop */}
               <div className="lg:col-span-1 hidden lg:block space-y-6">
                 <RemindersPanel key={refreshTrigger} />
-                <NotificationManager />
               </div>
 
               {/* Sidebar - Mobile Overlay */}
@@ -271,9 +269,6 @@ export default function HomePage() {
                     </div>
                     <div className="p-4">
                       <RemindersPanel key={refreshTrigger} />
-                      <div className="mt-6">
-                        <NotificationManager />
-                      </div>
                       <div className="mt-6 pt-6 border-t border-neutral-100">
                         <div className="flex items-center space-x-3 mb-4">
                           <div className="w-10 h-10 bg-neutral-200 rounded-full flex items-center justify-center">
@@ -300,6 +295,15 @@ export default function HomePage() {
               )}
             </div>
           </main>
+
+          {/* Floating Add Contact Button */}
+          <button
+            onClick={() => setShowAddConnection(true)}
+            className="fixed bottom-6 right-6 w-14 h-14 bg-coral-500 hover:bg-coral-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center z-40 group"
+            title="Add new contact (⌘K)"
+          >
+            <Plus className="w-6 h-6 group-hover:scale-110 transition-transform" />
+          </button>
 
           {/* Modals */}
           <OnboardingModal
