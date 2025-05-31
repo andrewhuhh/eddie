@@ -34,12 +34,12 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
     
     svg.attr('width', width).attr('height', height)
 
-    // Define zone radii - much more spaced out
+    // Define zone radii - 3x spacing for expansive relationship landscape
     const zones = {
-      inner: Math.min(width, height) * 0.15,    // Very close relationships
-      middle: Math.min(width, height) * 0.25,   // Close relationships  
-      outer: Math.min(width, height) * 0.35,    // Regular relationships
-      distant: Math.min(width, height) * 0.42   // Distant relationships
+      inner: Math.min(width, height) * 0.45,    // Very close relationships
+      middle: Math.min(width, height) * 0.75,   // Close relationships  
+      outer: Math.min(width, height) * 1.05,    // Regular relationships
+      distant: Math.min(width, height) * 1.26   // Distant relationships
     }
 
     // Create radial gradient for background
@@ -74,20 +74,20 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
     // Create main group for all elements
     const g = svg.append('g')
 
-    // Add gradient background
+    // Add gradient background - larger to cover 3x spaced zones
     g.append('rect')
-      .attr('x', centerX - width * 1.5)
-      .attr('y', centerY - height * 1.5)
-      .attr('width', width * 3)
-      .attr('height', height * 3)
+      .attr('x', centerX - width * 2.5)
+      .attr('y', centerY - height * 2.5)
+      .attr('width', width * 5)
+      .attr('height', height * 5)
       .attr('fill', 'url(#centerGradient)')
 
-    // Create zoom behavior with larger boundaries
+    // Create zoom behavior with much larger boundaries for 3x spaced zones
     const zoom = d3.zoom()
-      .scaleExtent([0.3, 2.5])
+      .scaleExtent([0.2, 3])
       .translateExtent([
-        [centerX - width * 1.2, centerY - height * 1.2], 
-        [centerX + width * 1.2, centerY + height * 1.2]
+        [centerX - width * 2, centerY - height * 2], 
+        [centerX + width * 2, centerY + height * 2]
       ])
       .on('zoom', (event) => {
         g.attr('transform', event.transform)
@@ -183,7 +183,7 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
 
     Object.entries(groupedPeople).forEach(([groupName, groupPeople]: [string, any]) => {
       const groupAngleStart = (groupIndex / Object.keys(groupedPeople).length) * 2 * Math.PI
-      const groupAngleSpan = (2 * Math.PI) / Object.keys(groupedPeople).length * 0.8 // Leave some space between groups
+             const groupAngleSpan = (2 * Math.PI) / Object.keys(groupedPeople).length * 0.9 // More spread with 3x spacing
       
       groupPeople.forEach((person: any, personIndex: number) => {
         // Map closeness to zones more distinctly
