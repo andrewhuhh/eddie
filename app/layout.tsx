@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Crimson_Text } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { Analytics } from "@vercel/analytics/next"
 
 const crimsonText = Crimson_Text({ 
   subsets: ['latin'],
@@ -42,7 +43,8 @@ export default function RootLayout({
             {children}
           </div>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   )
-} 
+}
