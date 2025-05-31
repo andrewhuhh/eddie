@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, Calendar, Users, Plus, Bell, LogOut, User, Menu, X } from 'lucide-react'
 import RelationshipMap from '../components/RelationshipMap'
+import RelationshipSuggestions from '../components/RelationshipSuggestions'
 import RemindersPanel from '../components/RemindersPanel'
 import JournalPanel from '../components/JournalPanel'
 import InteractionTimeline from '../components/InteractionTimeline'
@@ -223,7 +224,18 @@ export default function HomePage() {
                   transition={{ duration: 0.3 }}
                   className="w-full"
                 >
-                  {activeView === 'map' && <RelationshipMap key={refreshTrigger} onAddConnection={() => setShowAddConnection(true)} />}
+                  {activeView === 'map' && (
+                    <div className="space-y-6">
+                      <RelationshipSuggestions 
+                        key={refreshTrigger} 
+                        onSuggestionApplied={() => setRefreshTrigger(prev => prev + 1)} 
+                      />
+                      <RelationshipMap 
+                        key={refreshTrigger} 
+                        onAddConnection={() => setShowAddConnection(true)} 
+                      />
+                    </div>
+                  )}
                   {activeView === 'timeline' && <InteractionTimeline key={refreshTrigger} onAddConnection={() => setShowAddConnection(true)} onLogInteraction={() => setShowInteractionLogger(true)} />}
                   {activeView === 'journal' && <JournalPanel key={refreshTrigger} />}
                 </motion.div>

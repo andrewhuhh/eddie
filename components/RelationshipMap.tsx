@@ -5,6 +5,7 @@ import * as d3 from 'd3'
 import { motion, AnimatePresence } from 'framer-motion'
 import { User, Plus, Users, X, Edit } from 'lucide-react'
 import { useRelationshipData } from '@/contexts/RelationshipDataContext'
+import { useRelationshipAnalytics } from '@/hooks/useRelationshipAnalytics'
 import EditConnectionModal from '@/components/EditConnectionModal'
 
 interface RelationshipMapProps {
@@ -17,6 +18,7 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
   const [editingConnection, setEditingConnection] = useState<any>(null)
   const [showEditModal, setShowEditModal] = useState(false)
   const { people, loading, refreshData } = useRelationshipData()
+  const { suggestions } = useRelationshipAnalytics()
 
   // Create the D3 visualization with enhanced zones and grouping
   useEffect(() => {
@@ -218,6 +220,9 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
         const ambientX = Math.cos(ambientAngle) * ambientOffset
         const ambientY = Math.sin(ambientAngle) * ambientOffset
 
+        // Check if this person has a suggestion
+        const personSuggestion = suggestions.find(s => s.personId === person.id)
+
         positionedConnections.push({
           ...person,
           x: centerX + Math.cos(angle) * radius + ambientX,
@@ -227,7 +232,8 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
           angle: angle,
           radius: radius,
           groupName: groupName,
-          groupColor: groupColors[groupIndex % groupColors.length]
+          groupColor: groupColors[groupIndex % groupColors.length],
+          suggestion: personSuggestion
         })
       })
       groupIndex++
@@ -306,6 +312,18 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
       .attr('stroke', d => d.groupColor)
       .attr('stroke-width', 1)
       .attr('stroke-opacity', 0.3)
+
+    // Add suggestion indicator ring for people with suggestions
+    nodes
+      .filter(d => d.suggestion)
+      .append('circle')
+      .attr('r', nodeRadius + 6)
+      .attr('fill', 'none')
+      .attr('stroke', d => d.suggestion?.actionType === 'promote' ? '#10b981' : '#f59e0b')
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.8)
+      .attr('stroke-dasharray', '3,3')
+      .style('animation', 'pulse 2s infinite')
 
     // Add avatar background circle
     nodes
@@ -469,6 +487,12 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
 
   return (
     <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-neutral-100 p-3 sm:p-6">
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
         <div>
           <h2 className="text-lg sm:text-xl font-semibold text-neutral-800">Relationship Map</h2>
@@ -495,8 +519,8 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
       <div className="relative overflow-hidden">
         <svg 
           ref={svgRef} 
-          className="w-full h-auto border border-neutral-100 rounded-xl sm:rounded-2xl bg-neutral-50 cursor-pointer"
-          style={{ minHeight: '350px' }}
+          className="w-full h-auto border border-neutral-100 rounded-xl sm:rounded-2xl bg-neutral-50 cursor-pointer mx-auto"
+          style={{ minHeight: '350px', display: 'block' }}
         ></svg>
         
         {/* Connection Details Toast */}
@@ -528,6 +552,16 @@ export default function RelationshipMap({ onAddConnection }: RelationshipMapProp
                   <p className="text-xs sm:text-sm text-neutral-600 truncate">{selectedConnection.relationship}</p>
                   {selectedConnection.groupName && (
                     <p className="text-xs text-neutral-500 capitalize">{selectedConnection.groupName} group</p>
+                  )}
+                  {selectedConnection.suggestion && (
+                    <div className="flex items-center space-x-1 mt-1">
+                      <div className={`w-2 h-2 rounded-full ${
+                        selectedConnection.suggestion.actionType === 'promote' ? 'bg-green-500' : 'bg-amber-500'
+                      }`}></div>
+                      <p className="text-xs text-neutral-600">
+                        Suggested for {selectedConnection.suggestion.actionType === 'promote' ? 'promotion' : 'review'}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
